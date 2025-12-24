@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1051184777090",
+    "project_id": "glutino",
+    "storage_bucket": "glutino.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051184777090:android:215bb547f6cc6290e0319b",
+        "android_client_info": {
+          "package_name": "com.example.glutino"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1051184777090-9vm82rlljgl99uhs4vu4vumomlol2fov.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.glutino",
+            "certificate_hash": "7f59ee521c77dcd2c02f03bfedc327aff942e24c"
+          }
+        },
+        {
+          "client_id": "1051184777090-qku4ov743tg12q3gaq8s0moa65vcauab.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4jFJq1E_0TgUz_SkJ3xnSIa9xC_2Wydc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1051184777090-qku4ov743tg12q3gaq8s0moa65vcauab.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
