@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../scanner_screen.dart';
 import '../../models/product_model.dart';
 import '../../services/auth_service.dart';
+import '../../providers/shopping_provider.dart';
 
 class ProductsTab extends StatefulWidget {
   const ProductsTab({super.key});
@@ -240,6 +241,17 @@ class _ProductsTabState extends State<ProductsTab> {
                        });
                        _saveProducts(); // Persist changes
                      },
+                     onAdd: () {
+                       Provider.of<ShoppingProvider>(context, listen: false)
+                           .addProduct(product.name);
+                       ScaffoldMessenger.of(context).showSnackBar(
+                         SnackBar(
+                           content: Text("${product.name} ajouté à la liste"),
+                           backgroundColor: const Color(0xFF2ECC71),
+                           duration: const Duration(seconds: 2),
+                         )
+                       );
+                     },
                    );
                  },
                )
@@ -253,8 +265,13 @@ class _ProductsTabState extends State<ProductsTab> {
 class _ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onDelete;
+  final VoidCallback onAdd;
 
-  const _ProductCard({required this.product, required this.onDelete});
+  const _ProductCard({
+    required this.product, 
+    required this.onDelete,
+    required this.onAdd,
+  });
 
   Color get _statusColor {
     switch (product.status) {
@@ -329,6 +346,10 @@ class _ProductCard extends StatelessWidget {
                 )
               ],
             ),
+          ),
+          IconButton(
+            onPressed: onAdd,
+            icon: const Icon(Icons.playlist_add, color: Color(0xFF2ECC71)),
           ),
           IconButton(
             onPressed: onDelete,

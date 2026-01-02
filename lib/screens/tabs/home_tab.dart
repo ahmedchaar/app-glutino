@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeTab extends StatelessWidget {
-  const HomeTab({super.key});
+  // Add this callback to communicate with HomeScreen
+  final VoidCallback onNavigateToRecipes;
+
+  const HomeTab({
+    super.key, 
+    required this.onNavigateToRecipes,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -88,25 +94,33 @@ class HomeTab extends StatelessWidget {
 
           // Feature List
           _FeatureCard(
-            icon: Icons.center_focus_weak, // Scanner like icon
+            onTap: () {
+              // Action for scanner
+            },
+            icon: Icons.center_focus_weak, 
             title: "Scanner des produits",
             subtitle: "Vérifiez instantanément si un produit\ncontient du gluten",
-            color: const Color(0xFFE8F8F5), // Light Green bg
+            color: const Color(0xFFE8F8F5),
             iconColor: const Color(0xFF2ECC71),
           ),
           const SizedBox(height: 16),
+          
+          // LINKED FEATURE CARD
           _FeatureCard(
+            onTap: onNavigateToRecipes, // Uses the callback from HomeScreen
             icon: Icons.restaurant_menu,
-            // chef_hat might not be in material icons by default, using closest
-            // Icons.restaurant_menu or local_dining usually work
             iconData: Icons.local_dining, 
             title: "Recettes sans gluten",
             subtitle: "Découvrez des délicieuses recettes\nadaptées à vos besoins",
-            color: const Color(0xFFF0F9F6), // Slightly different tint
+            color: const Color(0xFFF0F9F6),
             iconColor: const Color(0xFF2ECC71),
           ),
+          
           const SizedBox(height: 16),
           _FeatureCard(
+            onTap: () {
+              // Action for restaurants
+            },
             icon: Icons.restaurant,
             title: "Restaurants sûrs",
             subtitle: "Trouvez des restaurants avec des\noptions sans gluten",
@@ -160,11 +174,12 @@ class HomeTab extends StatelessWidget {
 
 class _FeatureCard extends StatelessWidget {
   final IconData? icon;
-  final IconData? iconData; // Support both naming conventions if needed
+  final IconData? iconData;
   final String title;
   final String subtitle;
   final Color color;
   final Color iconColor;
+  final VoidCallback onTap; // Add onTap property
 
   const _FeatureCard({
     this.icon,
@@ -173,59 +188,63 @@ class _FeatureCard extends StatelessWidget {
     required this.subtitle,
     required this.color,
     required this.iconColor,
+    required this.onTap, // Required in constructor
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: onTap, // Wrap card in GestureDetector
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Icon(icon ?? iconData, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF2C3E50),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: const Color(0xFF7F8C8D),
-                    height: 1.3,
-                  ),
-                ),
-              ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon ?? iconData, color: iconColor, size: 24),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2C3E50),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: const Color(0xFF7F8C8D),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import 'package:glutino_app/screens/login_screen.dart';
 import 'package:glutino_app/screens/home_screen.dart';
 import 'package:glutino_app/services/auth_service.dart';
+import 'package:glutino_app/providers/shopping_provider.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AuthService(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => ShoppingProvider()),
+      ],
       child: const GlutinoApp(),
     ),
   );
@@ -40,14 +45,6 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    // Check session on startup is handled by AuthService constructor,
-    // but we can trigger a refresh if needed or just wait for it to be ready.
-    // Since AuthService loads async, we rely on Consumer/watch.
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthService>(
