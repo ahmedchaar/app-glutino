@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:glutino_app/screens/tabs/home_tab.dart';
 import 'package:glutino_app/screens/tabs/profile_tab.dart';
 import 'package:glutino_app/screens/tabs/products_tab.dart';
+import 'package:glutino_app/screens/tabs/restos_tab.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const HomeTab(),
     const Center(child: Text('Recettes (À venir)')),
     const ProductsTab(),
-    const Center(child: Text('Restaurants (À venir)')),
+    const RestosTab(),
     const Center(child: Text('Courses (À venir)')),
     const ProfileTab(),
   ];

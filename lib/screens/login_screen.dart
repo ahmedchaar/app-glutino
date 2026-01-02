@@ -53,6 +53,49 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showResetPasswordDialog() {
+    final emailCtrl = TextEditingController(text: _emailController.text);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Réinitialiser le mot de passe", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Entrez votre email pour recevoir un lien de réinitialisation.", style: GoogleFonts.poppins()),
+            const SizedBox(height: 10),
+            TextField(
+              controller: emailCtrl,
+              decoration: const InputDecoration(labelText: "Email"),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (emailCtrl.text.isEmpty) return;
+              
+              final auth = Provider.of<AuthService>(context, listen: false);
+              final success = await auth.resetPassword(emailCtrl.text);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(success ? "Email envoyé !" : "Erreur lors de l'envoi."),
+                  backgroundColor: success ? Colors.green : Colors.red,
+                ));
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2ECC71), foregroundColor: Colors.white),
+            child: const Text("Envoyer"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthService>().isLoading;
@@ -186,7 +229,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          _showResetPasswordDialog();
+                        },
                         child: Text(
                           'Mot de passe oublié ?',
                           style: GoogleFonts.poppins(

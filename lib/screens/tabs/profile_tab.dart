@@ -270,14 +270,34 @@ class ProfileTab extends StatelessWidget {
             width: double.infinity,
             height: 50,
             child: ElevatedButton.icon(
-              onPressed: () async {
-                await Provider.of<AuthService>(context, listen: false).logout();
-                if (context.mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
-                }
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text("Déconnexion", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                    content: Text("Êtes-vous sûr de vouloir vous déconnecter ?", style: GoogleFonts.poppins()),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text("Annuler", style: GoogleFonts.poppins(color: Colors.grey)),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.pop(context); // Close dialog
+                          await Provider.of<AuthService>(context, listen: false).logout();
+                          if (context.mounted) {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                              (route) => false,
+                            );
+                          }
+                        },
+                        child: Text("Déconnexion", style: GoogleFonts.poppins(color: const Color(0xFFE74C3C), fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
               },
               icon: const Icon(Icons.logout),
               label: const Text('Déconnexion'),
