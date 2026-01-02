@@ -20,11 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> tabs = [
-      HomeTab(onNavigateToRecipes: () {
-        setState(() {
-          _currentIndex = 1; 
-        });
-      }),
+      HomeTab(
+        onNavigateToRecipes: () => setState(() => _currentIndex = 1),
+        onNavigateToProducts: () => setState(() => _currentIndex = 2),
+        onNavigateToRestos: () => setState(() => _currentIndex = 3),
+      ),
       const RecipesTab(),
       const ProductsTab(),
       const RestosTab(),

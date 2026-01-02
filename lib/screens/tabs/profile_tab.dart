@@ -273,21 +273,29 @@ class ProfileTab extends StatelessWidget {
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
+                  builder: (dialogContext) => AlertDialog(
                     title: Text("Déconnexion", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                     content: Text("Êtes-vous sûr de vouloir vous déconnecter ?", style: GoogleFonts.poppins()),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.pop(dialogContext),
                         child: Text("Annuler", style: GoogleFonts.poppins(color: Colors.grey)),
                       ),
                       TextButton(
                         onPressed: () async {
-                          Navigator.pop(context); // Close dialog
-                          await Provider.of<AuthService>(context, listen: false).logout();
+                          Navigator.pop(dialogContext); // Close dialog
+                          
+                          // Use the 'context' from the build method (parent), not the dialog's
+                          // Wrap in try-catch to ensure we attempt navigation even if logout errors
+                          try {
+                            await Provider.of<AuthService>(context, listen: false).logout();
+                          } catch (e) {
+                            debugPrint("Logout error: $e");
+                          }
+                          
                           if (context.mounted) {
-                            Navigator.of(context).pushAndRemoveUntil(
+                            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                               MaterialPageRoute(builder: (context) => const LoginScreen()),
                               (route) => false,
                             );

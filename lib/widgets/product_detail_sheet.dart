@@ -7,8 +7,15 @@ class ProductDetailSheet extends StatelessWidget {
   final String scannedCode;
 
   final VoidCallback? onSave;
+  final VoidCallback? onAddToShoppingList; // New callback
 
-  const ProductDetailSheet({super.key, this.product, required this.scannedCode, this.onSave});
+  const ProductDetailSheet({
+    super.key, 
+    this.product, 
+    required this.scannedCode, 
+    this.onSave,
+    this.onAddToShoppingList,
+  });
 
   Color get _statusColor {
     if (product == null) return Colors.grey;
@@ -156,18 +163,14 @@ class ProductDetailSheet extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: Color(0xFF2C3E50)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text("Fermer", style: GoogleFonts.poppins(color: const Color(0xFF2C3E50), fontWeight: FontWeight.w600)),
+                child: TextButton.icon(
+                  onPressed: onAddToShoppingList,
+                  icon: const Icon(Icons.playlist_add, color: Color(0xFF2ECC71)),
+                  label: Text("Ajouter liste", style: GoogleFonts.poppins(color: const Color(0xFF2ECC71), fontWeight: FontWeight.bold)),
                 ),
               ),
               if (product != null) ...[
-                const SizedBox(width: 16),
+                const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: onSave,

@@ -1,206 +1,218 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../providers/shopping_provider.dart';
 
-class ShoppingListTab extends StatelessWidget {
+class ShoppingListTab extends StatefulWidget {
   const ShoppingListTab({super.key});
+
+  @override
+  State<ShoppingListTab> createState() => _ShoppingListTabState();
+}
+
+class _ShoppingListTabState extends State<ShoppingListTab> {
+  final TextEditingController _controller = TextEditingController();
+
+  void _handleAddItem() {
+    if (_controller.text.isNotEmpty) {
+      Provider.of<ShoppingProvider>(context, listen: false).addItem(_controller.text);
+      _controller.clear();
+    }
+  }
+
+  void _handleShare(BuildContext context) {
+    final text = Provider.of<ShoppingProvider>(context, listen: false).getShareableText();
+    Share.share(text);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FBF9),
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
+        title: Text('Ma Liste de Courses', style: GoogleFonts.poppins(color: const Color(0xFF2C3E50), fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF2C3E50), size: 20),
-          onPressed: () => Navigator.pop(context), // Reculer à la page precedente
-        ),
-        title: Text(
-          'Ma Liste',
-          style: GoogleFonts.poppins(
-            color: const Color(0xFF2C3E50),
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+        centerTitle: false,
+        actions: [
+           IconButton(
+            icon: const Icon(Icons.share, color: Color(0xFF2ECC71)),
+            onPressed: () => _handleShare(context),
+            tooltip: "Partager la liste",
           ),
-        ),
-      ),
-      // -----------------------
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Success Banner
-              _buildSuccessBanner(),
-
-              const SizedBox(height: 30),
-
-              // 2. Title Section
-              _buildTitleSection(),
-
-              const SizedBox(height: 20),
-
-              // 3. Dynamic Ingredients List
-              Consumer<ShoppingProvider>(
-                builder: (context, shoppingData, child) {
-                  return Column(
-                    children: [
-                      ...shoppingData.items.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        var item = entry.value;
-
-                        return _buildIngredientItem(
-                          (index + 1).toString(), 
-                          item['name']!,          
-                          item['type'] ?? "Article",           
-                        );
-                      }).toList(),
-                      
-                      
-                      if (shoppingData.items.isEmpty)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 40),
-                            child: Text(
-                              'Aucun article ajouté',
-                              style: GoogleFonts.poppins(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.grey),
+            onPressed: () {
+               Provider.of<ShoppingProvider>(context, listen: false).clearCompleted();
+            },
+            tooltip: "Supprimer les terminés",
           ),
-        ),
-      ),
-    );
-  }
-
-  // --- Helper Widgets ---
-
-  Widget _buildIngredientItem(String number, String title, String subtitle) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-          )
+          const SizedBox(width: 10),
         ],
       ),
-      child: Row(
+      body: Column(
         children: [
+          // Input Section
           Container(
-            width: 40,
-            height: 40,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFEDF9F4),
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-            alignment: Alignment.center,
-            child: Text(
-              number,
-              style: const TextStyle(
-                color: Color(0xFF5ED3A3),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: 'Ajouter un produit (ex: Pâtes)',
+                      hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF0F2F5),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onSubmitted: (_) => _handleAddItem(),
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                const SizedBox(width: 12),
+                FloatingActionButton(
+                  mini: true,
+                  onPressed: _handleAddItem,
+                  backgroundColor: const Color(0xFF2ECC71),
+                  child: const Icon(Icons.add, color: Colors.white),
+                  elevation: 0,
                 ),
               ],
             ),
           ),
+          
+          // List Section
+          Expanded(
+            child: Consumer<ShoppingProvider>(
+              builder: (context, provider, child) {
+                if (provider.items.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Votre liste est vide',
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: provider.items.length,
+                  itemBuilder: (context, index) {
+                    final item = provider.items[index];
+                    return Dismissible(
+                      key: Key(item.id),
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        color: Colors.red[100],
+                        child: const Icon(Icons.delete, color: Colors.red),
+                      ),
+                      direction: DismissDirection.endToStart,
+                      onDismissed: (_) {
+                        provider.removeItem(item.id);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: item.isCompleted ? null : Border.all(color: Colors.transparent),
+                          boxShadow: item.isCompleted ? [] : [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: Checkbox(
+                                value: item.isCompleted,
+                                activeColor: const Color(0xFF2ECC71),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                onChanged: (val) => provider.toggleStatus(item.id),
+                              ),
+                              title: Text(
+                                item.name,
+                                style: GoogleFonts.poppins(
+                                  decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                                  color: item.isCompleted ? Colors.grey : const Color(0xFF2C3E50),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              subtitle: item.type != 'Perso' ? Text(item.type, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey)) : null,
+                              trailing: IconButton(
+                                icon: const Icon(Icons.close, size: 18, color: Colors.grey),
+                                onPressed: () => provider.removeItem(item.id),
+                              ),
+                            ),
+                            if (item.alternative != null && !item.isCompleted)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFE8F8F5),
+                                  borderRadius: BorderRadius.only(
+                                    bottomLeft: Radius.circular(16),
+                                    bottomRight: Radius.circular(16),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.lightbulb_outline, size: 16, color: Color(0xFF2ECC71)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "Alternative: ${item.alternative}",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: const Color(0xFF27AE60),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSuccessBanner() {
-    return Consumer<ShoppingProvider>(
-      builder: (context, shoppingData, child) {
-        // If no recipe was added yet, show a generic welcome banner
-        String lastItem = shoppingData.lastRecipeName.isEmpty 
-            ? "votre sélection" 
-            : shoppingData.lastRecipeName;
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF5ED3A3), // Solid green like your Figma success state
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ajouté avec succès !',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'Dernier ajout: $lastItem',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
-                       ),
-                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTitleSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Liste de courses',
-          style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Gérez les ingrédients ajoutés depuis les recettes',
-          style: GoogleFonts.poppins(color: Colors.grey, fontSize: 13),
-        ),
-      ],
     );
   }
 }

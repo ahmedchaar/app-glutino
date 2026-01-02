@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -14,30 +13,15 @@ class AuthService extends ChangeNotifier {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   AuthService() {
-    _loadUser();
+    _initAuth();
   }
 
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _currentUser != null;
 
-  static const String _userKey = 'user_data';
-
-  Future<void> _loadUser() async {
-    // Try to load manually saved user first
-    final prefs = await SharedPreferences.getInstance();
-    final userString = prefs.getString(_userKey);
-    if (userString != null) {
-      try {
-        final Map<String, dynamic> userMap = jsonDecode(userString);
-        _currentUser = User.fromJson(userMap);
-        notifyListeners();
-      } catch (e) {
-        debugPrint('Error loading user: $e');
-      }
-    }
-
-    // Listen to Firebase Auth state
+  void _initAuth() {
+    // Listen to Firebase Auth state - purely cloud based
     _firebaseAuth.authStateChanges().listen((firebaseUser) {
         if (firebaseUser != null) {
              final nameParts = firebaseUser.displayName?.split(' ') ?? ['User'];
@@ -49,7 +33,8 @@ class AuthService extends ChangeNotifier {
                firstName: firstName,
                lastName: lastName,
              );
-             _saveUserToPrefs(); // Sync to local storage
+        } else {
+             _currentUser = null;
         }
         notifyListeners();
     });
@@ -59,7 +44,6 @@ class AuthService extends ChangeNotifier {
     _setLoading(true);
     try {
       await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
-      // _loadUser listener will handle state update
       _setLoading(false);
       return true;
     } catch (e) {
@@ -78,13 +62,7 @@ class AuthService extends ChangeNotifier {
       );
       if (credential.user != null) {
         await credential.user!.updateDisplayName("$firstName $lastName");
-        
-        _currentUser = User(
-            email: email,
-            firstName: firstName,
-            lastName: lastName
-        );
-         await _saveUserToPrefs();
+        // State updates automatically via listener
       }
       _setLoading(false);
       return true;
@@ -118,7 +96,6 @@ class AuthService extends ChangeNotifier {
                     idToken: googleAuth.idToken,
                 );
                 await _firebaseAuth.signInWithCredential(credential);
-                 // Listener updates state
                 _setLoading(false);
                 return true;
             }
@@ -132,7 +109,6 @@ class AuthService extends ChangeNotifier {
                    return true;
              }
         } else if (provider == 'Apple') {
-            // NOTE: Requires iOS configuration and entitlement
              final credential = await SignInWithApple.getAppleIDCredential(
                 scopes: [
                   AppleIDAuthorizationScopes.email,
@@ -140,16 +116,13 @@ class AuthService extends ChangeNotifier {
                 ],
               );
               
-              // Firebase sign in with Apple not fully mocked here without proper tokens, 
-              // but this is the standard flow.
-              // For now we will just simulate success if credential exists
               debugPrint("Apple ID Credential received: ${credential.email}");
+               // Mocking successful auth for Apple as we need real backend for full flow usually
                _currentUser = User(
                   email: credential.email ?? 'apple@user.com',
                   firstName: credential.givenName ?? 'Apple',
                   lastName: credential.familyName ?? 'User'
                );
-               await _saveUserToPrefs();
                _setLoading(false);
                return true;
         }
@@ -162,24 +135,28 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _firebaseAuth.signOut();
-    if (await _googleSignIn.isSignedIn()) {
-      await _googleSignIn.signOut();
+    try {
+        await _firebaseAuth.signOut();
+    } catch (e) {
+        debugPrint("Firebase SignOut Error: $e");
     }
-    // Facebook Logout?
-    await FacebookAuth.instance.logOut();
+    
+    try {
+        if (await _googleSignIn.isSignedIn()) {
+          await _googleSignIn.signOut();
+        }
+    } catch (e) {
+        debugPrint("Google SignOut Error: $e");
+    }
+
+    try {
+        await FacebookAuth.instance.logOut();
+    } catch (e) {
+        // Ignored
+    }
 
     _currentUser = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userKey);
     notifyListeners();
-  }
-
-  Future<void> _saveUserToPrefs() async {
-    if (_currentUser != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_userKey, jsonEncode(_currentUser!.toJson()));
-    }
   }
 
   void _setLoading(bool value) {

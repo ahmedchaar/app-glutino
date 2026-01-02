@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeTab extends StatelessWidget {
-  // Add this callback to communicate with HomeScreen
+  // Add these callbacks to communicate with HomeScreen
   final VoidCallback onNavigateToRecipes;
+  final VoidCallback onNavigateToProducts;
+  final VoidCallback onNavigateToRestos;
 
   const HomeTab({
     super.key, 
     required this.onNavigateToRecipes,
+    required this.onNavigateToProducts,
+    required this.onNavigateToRestos,
   });
 
   @override
@@ -94,9 +98,7 @@ class HomeTab extends StatelessWidget {
 
           // Feature List
           _FeatureCard(
-            onTap: () {
-              // Action for scanner
-            },
+            onTap: onNavigateToProducts, // Updated callback
             icon: Icons.center_focus_weak, 
             title: "Scanner des produits",
             subtitle: "Vérifiez instantanément si un produit\ncontient du gluten",
@@ -107,7 +109,7 @@ class HomeTab extends StatelessWidget {
           
           // LINKED FEATURE CARD
           _FeatureCard(
-            onTap: onNavigateToRecipes, // Uses the callback from HomeScreen
+            onTap: onNavigateToRecipes, 
             icon: Icons.restaurant_menu,
             iconData: Icons.local_dining, 
             title: "Recettes sans gluten",
@@ -118,9 +120,7 @@ class HomeTab extends StatelessWidget {
           
           const SizedBox(height: 16),
           _FeatureCard(
-            onTap: () {
-              // Action for restaurants
-            },
+            onTap: onNavigateToRestos, // Updated callback
             icon: Icons.restaurant,
             title: "Restaurants sûrs",
             subtitle: "Trouvez des restaurants avec des\noptions sans gluten",

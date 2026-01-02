@@ -5,6 +5,20 @@ class Specialty {
   const Specialty({required this.name, required this.price});
 }
 
+class Review {
+  final String userName;
+  final String comment;
+  final double rating;
+  final String date;
+
+  const Review({
+    required this.userName,
+    required this.comment,
+    required this.rating,
+    required this.date,
+  });
+}
+
 class Restaurant {
   final String id;
   final String name;
@@ -17,6 +31,12 @@ class Restaurant {
   final String openingHours;
   final List<Specialty> specialties;
   final String phone;
+  
+  // New Fields
+  final double latitude;
+  final double longitude;
+  final List<String> mealTypes; // e.g. ["Petit-déjeuner", "Déjeuner"]
+  final List<Review> reviews;
 
   const Restaurant({
     required this.id,
@@ -30,19 +50,44 @@ class Restaurant {
     required this.openingHours,
     required this.specialties,
     required this.phone,
+    this.latitude = 0.0,
+    this.longitude = 0.0,
+    this.mealTypes = const [],
+    this.reviews = const [],
   });
 
-  Restaurant copyWith({bool? isFavorite}) => Restaurant(
-        id: id,
-        name: name,
-        image: image,
-        location: location,
-        rating: rating,
-        distance: distance,
-        category: category,
+  Restaurant copyWith({
+    String? id,
+    String? name,
+    String? image,
+    String? location,
+    double? rating,
+    String? distance,
+    String? category,
+    bool? isFavorite,
+    String? openingHours,
+    List<Specialty>? specialties,
+    String? phone,
+    double? latitude,
+    double? longitude,
+    List<String>? mealTypes,
+    List<Review>? reviews,
+  }) =>
+      Restaurant(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        image: image ?? this.image,
+        location: location ?? this.location,
+        rating: rating ?? this.rating,
+        distance: distance ?? this.distance,
+        category: category ?? this.category,
         isFavorite: isFavorite ?? this.isFavorite,
-        openingHours: openingHours,
-        specialties: specialties,
-        phone: phone,
+        openingHours: openingHours ?? this.openingHours,
+        specialties: specialties ?? this.specialties,
+        phone: phone ?? this.phone,
+        latitude: latitude ?? this.latitude,
+        longitude: longitude ?? this.longitude,
+        mealTypes: mealTypes ?? this.mealTypes,
+        reviews: reviews ?? this.reviews,
       );
 }

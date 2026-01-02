@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:provider/provider.dart';
+import '../../providers/shopping_provider.dart';
 import '../services/product_service.dart';
 import '../widgets/product_detail_sheet.dart';
 
@@ -38,7 +40,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
             builder: (context) => ProductDetailSheet(
               product: product, 
               scannedCode: code,
-              onSave: () {
+              onAddToShoppingList: () {
+            if (product != null) {
+              Provider.of<ShoppingProvider>(context, listen: false).addProduct(product.name);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${product.name} ajouté à votre liste de courses')),
+              );
+              Navigator.pop(context); // Close sheet
+            }
+          },
+          onSave: () {
                 // 1. Close the BottomSheet
                 Navigator.of(context).pop();
                 // 2. Return the product to the previous screen (ProductsTab)

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../scanner_screen.dart';
 import '../../models/product_model.dart';
 import '../../services/auth_service.dart';
@@ -25,41 +24,11 @@ class _ProductsTabState extends State<ProductsTab> {
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    // No local load needed
   }
-
-  String get _userKey {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (user != null && user.email.isNotEmpty) {
-      return 'saved_products_${user.email}';
-    }
-    return 'saved_products_guest';
-  }
-
-  Future<void> _loadProducts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? productsJson = prefs.getString(_userKey);
-    if (productsJson != null) {
-      final List<dynamic> decoded = jsonDecode(productsJson);
-      if (mounted) {
-        setState(() {
-          _savedProducts = decoded.map((e) => Product.fromJson(e)).toList();
-        });
-      }
-    } else {
-      if (mounted) {
-         setState(() {
-          _savedProducts = [];
-        });
-      }
-    }
-  }
-
-  Future<void> _saveProducts() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String encoded = jsonEncode(_savedProducts.map((e) => e.toJson()).toList());
-    await prefs.setString(_userKey, encoded);
-  }
+  
+  // No persistence logic needed for professional session-based MVP
+  // Cloud sync would go here in future version
 
   void _openScanner() async {
      final result = await Navigator.of(context).push(
@@ -72,7 +41,6 @@ class _ProductsTabState extends State<ProductsTab> {
          _savedProducts.insert(0, result);
          _selectedSegment = 1; 
        });
-       _saveProducts(); // Persist changes
        if (mounted) {
          ScaffoldMessenger.of(context).showSnackBar(
            SnackBar(
@@ -239,7 +207,6 @@ class _ProductsTabState extends State<ProductsTab> {
                        setState(() {
                          _savedProducts.removeAt(index);
                        });
-                       _saveProducts(); // Persist changes
                      },
                      onAdd: () {
                        Provider.of<ShoppingProvider>(context, listen: false)
