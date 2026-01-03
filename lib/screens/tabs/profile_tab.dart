@@ -8,9 +8,20 @@ import '../../services/auth_service.dart';
 import '../login_screen.dart';
 import '../../widgets/edit_profile_sheet.dart';
 import '../../providers/language_provider.dart';
+import '../settings/notifications_screen.dart';
+import '../settings/security_screen.dart';
+import '../settings/privacy_screen.dart';
+import '../settings/help_support_screen.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key});
+  final VoidCallback? onNavigateToRestos;
+  final VoidCallback? onNavigateToProducts;
+
+  const ProfileTab({
+    super.key,
+    this.onNavigateToRestos,
+    this.onNavigateToProducts,
+  });
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -47,7 +58,12 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.settings_outlined, color: Color(0xFF2ECC71)),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SecurityScreen()),
+                    );
+                  },
                 ),
               ],
             ),
@@ -81,6 +97,13 @@ class _ProfileTabState extends State<ProfileTab> {
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Color(0xFF2ECC71),
+                              );
+                            },
                           ),
                         )
                       : const Icon(
@@ -180,7 +203,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: 'Cœliaque strict',
+                  value: user?.sensitivity ?? 'Sensible',
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     border: OutlineInputBorder(
@@ -201,7 +224,11 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                     );
                   }).toList(),
-                  onChanged: (val) {},
+                  onChanged: (val) {
+                    if (val != null) {
+                      context.read<AuthService>().updateSensitivity(val);
+                    }
+                  },
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -293,15 +320,17 @@ class _ProfileTabState extends State<ProfileTab> {
                   icon: Icons.restaurant,
                   title: "Restaurants\nenregistrés",
                   color: const Color(0xFFE8F8F5), // Light Green
+                  onTap: widget.onNavigateToRestos,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _FavoriteCard(
-                  icon: Icons.qr_code_scanner, // Should be barcode like
+                  icon: Icons.qr_code_scanner, 
                   iconData: Icons.barcode_reader,
                   title: "Produits\nenregistrés",
                   color: const Color(0xFFE8F8F5),
+                  onTap: widget.onNavigateToProducts,
                 ),
               ),
             ],
@@ -309,10 +338,38 @@ class _ProfileTabState extends State<ProfileTab> {
            const SizedBox(height: 32),
 
           // Settings List
-          _SettingsTile(icon: Icons.notifications_none, title: "Notifications"),
-          _SettingsTile(icon: Icons.security, title: "Sécurité du compte"),
-          _SettingsTile(icon: Icons.lock_outline, title: "Confidentialité"),
-          _SettingsTile(icon: Icons.help_outline, title: "Aide & Support"),
+          _SettingsTile(
+            icon: Icons.notifications_none, 
+            title: "Notifications",
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+            ),
+          ),
+          _SettingsTile(
+            icon: Icons.security, 
+            title: "Sécurité du compte",
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SecurityScreen()),
+            ),
+          ),
+          _SettingsTile(
+            icon: Icons.lock_outline, 
+            title: "Confidentialité",
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PrivacyScreen()),
+            ),
+          ),
+          _SettingsTile(
+            icon: Icons.help_outline, 
+            title: "Aide & Support",
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
+            ),
+          ),
 
           const SizedBox(height: 32),
 
@@ -376,6 +433,66 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
            const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  void _showSettingPlaceholder(BuildContext context, String title) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE8F8F5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.settings, color: Color(0xFF2ECC71), size: 30),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF2C3E50),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Cette fonctionnalité sera disponible dans la prochaine mise à jour de Glutino.",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: const Color(0xFF7F8C8D),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2ECC71),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  "Compris !",
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -550,44 +667,49 @@ class _FavoriteCard extends StatelessWidget {
   final IconData? iconData;
   final String title;
   final Color color;
+  final VoidCallback? onTap;
 
   const _FavoriteCard({
     this.icon,
     this.iconData,
     required this.title,
     required this.color,
+    this.onTap,
   });
    
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFA5E6D2).withOpacity(0.5), // Mint-ish color from image
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFA5E6D2).withOpacity(0.5), // Mint-ish color from image
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon ?? iconData, color: const Color(0xFF2ECC71), size: 24),
             ),
-            child: Icon(icon ?? iconData, color: const Color(0xFF2ECC71), size: 24),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF2C3E50),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2C3E50),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -596,8 +718,9 @@ class _FavoriteCard extends StatelessWidget {
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
+  final VoidCallback? onTap;
 
-  const _SettingsTile({required this.icon, required this.title});
+  const _SettingsTile({required this.icon, required this.title, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -619,9 +742,7 @@ class _SettingsTile extends StatelessWidget {
           ),
         ),
         trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-        onTap: () {
-          // Navigation logic placeholder
-        },
+        onTap: onTap,
       ),
     );
   }

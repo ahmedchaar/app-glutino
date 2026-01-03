@@ -8,7 +8,9 @@ import '../../widgets/rating_stars.dart';
 import '../restaurant_detail_screen.dart';
 
 class RestosTab extends StatefulWidget {
-  const RestosTab({super.key});
+  final bool showFavoritesOnInit;
+  
+  const RestosTab({super.key, this.showFavoritesOnInit = false});
 
   @override
   State<RestosTab> createState() => _RestosTabState();
@@ -24,6 +26,7 @@ class _RestosTabState extends State<RestosTab> {
   final _service = RestaurantService();
   final _favorites = FavoritesService();
   final _searchCtrl = TextEditingController();
+  bool _initialized = false;
 
   String _activeCategory = "Tous";
   bool _showOnlyFavorites = false;
@@ -46,9 +49,25 @@ class _RestosTabState extends State<RestosTab> {
   @override
   void initState() {
     super.initState();
-    _favorites.init().then((_) => setState(() {}));
+    if (widget.showFavoritesOnInit) {
+      _showOnlyFavorites = true;
+    }
     _load();
     _favorites.addListener(_onFavoritesChange);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final user = context.read<AuthService>().currentUser;
+      if (user != null) {
+        _favorites.init(user.email).then((_) {
+          if (mounted) setState(() {});
+        });
+      }
+      _initialized = true;
+    }
   }
 
   void _onFavoritesChange() {
@@ -175,17 +194,6 @@ class _RestosTabState extends State<RestosTab> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: bg,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.tune_rounded, color: textDark, size: 20),
                         ),
                       ),
                     ],

@@ -32,9 +32,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (success && mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Compte créé avec succès ! Connectez-vous.'),
+            backgroundColor: Color(0xFF2ECC71),
+          ),
         );
+        Navigator.of(context).pop(); // Go back to LoginScreen
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

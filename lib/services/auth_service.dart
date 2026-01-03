@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService extends ChangeNotifier {
@@ -21,18 +22,38 @@ class AuthService extends ChangeNotifier {
   bool get isAuthenticated => _currentUser != null;
 
   void _initAuth() {
-    // Listen to Firebase Auth state - purely cloud based
-    _firebaseAuth.authStateChanges().listen((firebaseUser) {
+    _firebaseAuth.authStateChanges().listen((firebaseUser) async {
         if (firebaseUser != null) {
-             final nameParts = firebaseUser.displayName?.split(' ') ?? ['User'];
-             final firstName = nameParts.isNotEmpty ? nameParts.first : 'User';
-             final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+             final email = firebaseUser.email ?? '';
              
-             _currentUser = User(
-               email: firebaseUser.email ?? '',
-               firstName: firstName,
-               lastName: lastName,
-             );
+             final prefs = await SharedPreferences.getInstance();
+             final key = 'user_metadata_$email';
+             String? userData = prefs.getString(key);
+             
+             // SAFEGUARD: If user data is > 5MB, it's likely corrupted/bloated. Clear it.
+             if (userData != null && userData.length > 5 * 1024 * 1024) {
+                debugPrint("CRITICAL: User data too large (${userData.length}). Clearing.");
+                await prefs.remove(key);
+                userData = null;
+             }
+             
+             if (userData != null) {
+                try {
+                   _currentUser = User.fromJson(jsonDecode(userData));
+                } catch (e) {
+                   debugPrint("Error decoding user metadata: $e");
+                }
+             } else {
+                final nameParts = firebaseUser.displayName?.split(' ') ?? ['User'];
+                final firstName = nameParts.isNotEmpty ? nameParts.first : 'User';
+                final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+                
+                _currentUser = User(
+                  email: email,
+                  firstName: firstName,
+                  lastName: lastName,
+                );
+             }
         } else {
              _currentUser = null;
         }
@@ -62,7 +83,14 @@ class AuthService extends ChangeNotifier {
       );
       if (credential.user != null) {
         await credential.user!.updateDisplayName("$firstName $lastName");
-        // State updates automatically via listener
+        
+        // 🔥 Create and save initial user metadata immediately
+        _currentUser = User(
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+        );
+        await _saveUserToPrefs();
       }
       _setLoading(false);
       return true;
@@ -153,13 +181,31 @@ class AuthService extends ChangeNotifier {
   }
 
 
- Future<void> updateProfilePhoto(String base64Image) async {
-  if (_currentUser == null) return;
+  Future<void> updateProfilePhoto(String base64Image) async {
+    if (_currentUser == null) return;
 
-  _currentUser = _currentUser!.copyWith(photoBase64: base64Image);
-  await _saveUserToPrefs();
-  notifyListeners();
-}
+    _currentUser = _currentUser!.copyWith(photoBase64: base64Image);
+    await _saveUserToPrefs();
+    notifyListeners();
+  }
+
+  Future<void> updateSensitivity(String level) async {
+    if (_currentUser == null) return;
+
+    _currentUser = _currentUser!.copyWith(sensitivity: level);
+    await _saveUserToPrefs();
+    notifyListeners();
+  }
+
+  Future<void> _saveUserToPrefs() async {
+    if (_currentUser == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_metadata_${_currentUser!.email}', jsonEncode(_currentUser!.toJson()));
+    } catch (e) {
+      debugPrint("Error saving user to prefs: $e");
+    }
+  }
 
 
 

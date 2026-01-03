@@ -29,7 +29,13 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    // SAFEGUARD: Compress image to prevent OOM
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 75,
+    );
 
     if (image == null) return;
 
@@ -68,6 +74,9 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
                               width: 90,
                               height: 90,
                               fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.person, size: 40, color: Color(0xFF2ECC71));
+                              },
                             ),
                           )
                         : const Icon(Icons.person, size: 40, color: Color(0xFF2ECC71)),

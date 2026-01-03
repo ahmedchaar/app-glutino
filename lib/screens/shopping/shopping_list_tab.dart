@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../providers/shopping_provider.dart';
+import '../../services/auth_service.dart';
 
 class ShoppingListTab extends StatefulWidget {
   const ShoppingListTab({super.key});
@@ -13,6 +14,19 @@ class ShoppingListTab extends StatefulWidget {
 
 class _ShoppingListTabState extends State<ShoppingListTab> {
   final TextEditingController _controller = TextEditingController();
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final user = context.read<AuthService>().currentUser;
+      if (user != null) {
+        context.read<ShoppingProvider>().init(user.email);
+      }
+      _initialized = true;
+    }
+  }
 
   void _handleAddItem() {
     if (_controller.text.isNotEmpty) {

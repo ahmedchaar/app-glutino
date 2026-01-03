@@ -7,10 +7,13 @@ import 'package:provider/provider.dart';
 import '../scanner_screen.dart';
 import '../../models/product_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/saved_products_service.dart';
 import '../../providers/shopping_provider.dart';
 
 class ProductsTab extends StatefulWidget {
-  const ProductsTab({super.key});
+  final bool showSavedOnInit;
+  
+  const ProductsTab({super.key, this.showSavedOnInit = false});
 
   @override
   State<ProductsTab> createState() => _ProductsTabState();
@@ -19,16 +22,28 @@ class ProductsTab extends StatefulWidget {
 class _ProductsTabState extends State<ProductsTab> {
   // 0 = Scanner, 1 = Enregistrés
   int _selectedSegment = 0;
-  List<Product> _savedProducts = [];
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    // No local load needed
+    if (widget.showSavedOnInit) {
+      _selectedSegment = 1;
+    }
   }
-  
-  // No persistence logic needed for professional session-based MVP
-  // Cloud sync would go here in future version
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    if (!_initialized) {
+      final user = context.read<AuthService>().currentUser;
+      if (user != null) {
+        context.read<SavedProductsService>().init(user.email);
+      }
+      _initialized = true;
+    }
+  }
 
   void _openScanner() async {
      final result = await Navigator.of(context).push(
@@ -36,9 +51,8 @@ class _ProductsTabState extends State<ProductsTab> {
      );
 
      if (result != null && result is Product) {
+       await context.read<SavedProductsService>().addProduct(result);
        setState(() {
-         // Avoid duplicates if needed, or allow
-         _savedProducts.insert(0, result);
          _selectedSegment = 1; 
        });
        if (mounted) {
@@ -98,11 +112,13 @@ class _ProductsTabState extends State<ProductsTab> {
                   ),
                 ),
                 Expanded(
-                  child: _SegmentButton(
-                    title: 'Enregistrés',
-                    badgeCount: _savedProducts.isNotEmpty ? _savedProducts.length : null,
-                    isSelected: _selectedSegment == 1,
-                    onTap: () => setState(() => _selectedSegment = 1),
+                  child: Consumer<SavedProductsService>(
+                    builder: (context, service, _) => _SegmentButton(
+                      title: 'Enregistrés',
+                      badgeCount: service.products.isNotEmpty ? service.products.length : null,
+                      isSelected: _selectedSegment == 1,
+                      onTap: () => setState(() => _selectedSegment = 1),
+                    ),
                   ),
                 ),
               ],
@@ -189,39 +205,42 @@ class _ProductsTabState extends State<ProductsTab> {
             ),
             
           ] else ...[
-             if (_savedProducts.isEmpty)
-               Center(child: Padding(
-                 padding: const EdgeInsets.only(top: 50),
-                 child: Text("Aucun produit enregistré", style: GoogleFonts.poppins(color: Colors.grey)),
-               ))
-             else
-               ListView.builder(
-                 physics: const NeverScrollableScrollPhysics(),
-                 shrinkWrap: true,
-                 itemCount: _savedProducts.length,
-                 itemBuilder: (context, index) {
-                   final product = _savedProducts[index];
-                   return _ProductCard(
-                     product: product,
-                     onDelete: () {
-                       setState(() {
-                         _savedProducts.removeAt(index);
-                       });
-                     },
-                     onAdd: () {
-                       Provider.of<ShoppingProvider>(context, listen: false)
-                           .addProduct(product.name);
-                       ScaffoldMessenger.of(context).showSnackBar(
-                         SnackBar(
-                           content: Text("${product.name} ajouté à la liste"),
-                           backgroundColor: const Color(0xFF2ECC71),
-                           duration: const Duration(seconds: 2),
-                         )
-                       );
-                     },
-                   );
-                 },
-               )
+             Consumer<SavedProductsService>(
+               builder: (context, service, _) {
+                 if (service.products.isEmpty) {
+                   return Center(child: Padding(
+                     padding: const EdgeInsets.only(top: 50),
+                     child: Text("Aucun produit enregistré", style: GoogleFonts.poppins(color: Colors.grey)),
+                   ));
+                 }
+                 
+                 return ListView.builder(
+                   physics: const NeverScrollableScrollPhysics(),
+                   shrinkWrap: true,
+                   itemCount: service.products.length,
+                   itemBuilder: (context, index) {
+                     final product = service.products[index];
+                     return _ProductCard(
+                       product: product,
+                       onDelete: () async {
+                         await service.removeProduct(product.barcode);
+                       },
+                       onAdd: () {
+                         Provider.of<ShoppingProvider>(context, listen: false)
+                             .addProduct(product.name);
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(
+                             content: Text("${product.name} ajouté à la liste"),
+                             backgroundColor: const Color(0xFF2ECC71),
+                             duration: const Duration(seconds: 2),
+                           )
+                         );
+                       },
+                     );
+                   },
+                 );
+               }
+             )
           ]
         ],
       ),

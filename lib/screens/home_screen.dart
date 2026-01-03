@@ -16,6 +16,30 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  bool _showRestosFavorites = false;
+  bool _showProductsSaved = false;
+
+  void _navigateToRestosFavorites() {
+    setState(() {
+      _showRestosFavorites = true;
+      _currentIndex = 3;
+    });
+    // Reset flag after navigation
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) setState(() => _showRestosFavorites = false);
+    });
+  }
+
+  void _navigateToProductsSaved() {
+    setState(() {
+      _showProductsSaved = true;
+      _currentIndex = 2;
+    });
+    // Reset flag after navigation
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) setState(() => _showProductsSaved = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
         onNavigateToRestos: () => setState(() => _currentIndex = 3),
       ),
       const RecipesTab(),
-      const ProductsTab(),
-      const RestosTab(),
+      ProductsTab(showSavedOnInit: _showProductsSaved),
+      RestosTab(showFavoritesOnInit: _showRestosFavorites),
       const ShoppingListTab(),
-      const ProfileTab(),
+      ProfileTab(
+        onNavigateToRestos: _navigateToRestosFavorites,
+        onNavigateToProducts: _navigateToProductsSaved,
+      ),
     ];
 
     return Scaffold(
