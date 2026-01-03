@@ -1,15 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert'; // for base64Encode
+import 'package:image_picker/image_picker.dart'; // for ImagePicker
+
 import '../../services/auth_service.dart';
 import '../login_screen.dart';
+import '../../widgets/edit_profile_sheet.dart';
+import '../../providers/language_provider.dart';
 
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
 
   @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+
+class _ProfileTabState extends State<ProfileTab> {
+  
+ @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthService>().currentUser;
+    final languageProvider = context.watch<LanguageProvider>();
+    final selectedLanguage = languageProvider.locale.languageCode;
+
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -56,19 +71,25 @@ class ProfileTab extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE8F8F5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Color(0xFF2ECC71),
-                  ),
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: const Color(0xFFE8F8F5),
+                  child: user?.photoBase64 != null
+                      ? ClipOval(
+                          child: Image.memory(
+                            base64Decode(user!.photoBase64!),
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Color(0xFF2ECC71),
+                        ),
                 ),
+
                 const SizedBox(height: 16),
                 Text(
                   user != null ? '${user.firstName} ${user.lastName}' : 'Utilisateur',
@@ -91,7 +112,14 @@ class ProfileTab extends StatelessWidget {
                   height: 40,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Modification non implémentée')));
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                        ),
+                        builder: (_) => const EditProfileSheet(),
+                      );
                     },
                     icon: const Icon(Icons.edit, size: 16),
                     label: const Text('Modifier le profil'),
@@ -188,35 +216,58 @@ class ProfileTab extends StatelessWidget {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          context.read<LanguageProvider>().setLanguage('fr');
+                        },
+
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2ECC71),
-                          foregroundColor: Colors.white,
+                         backgroundColor: selectedLanguage == 'fr'
+                            ? const Color(0xFF2ECC71)
+                            : const Color(0xFFF0F0F0),
+                        foregroundColor: selectedLanguage == 'fr'
+                            ? Colors.white
+                            : Colors.black,
+
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text("Français", style: GoogleFonts.poppins(fontSize: 12)),
+                        child: Text(
+                          "Français",
+                          style: GoogleFonts.poppins(fontSize: 12),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF0F0F0),
-                          foregroundColor: Colors.black,
-                          side: BorderSide.none,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          context.read<LanguageProvider>().setLanguage('ar');
+                        },
+
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: selectedLanguage == 'ar'
+                              ? const Color(0xFF2ECC71)
+                              : const Color(0xFFF0F0F0),
+                          foregroundColor: selectedLanguage == 'ar'
+                              ? Colors.white
+                              : Colors.black,
+
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text("عربي", style: GoogleFonts.poppins(fontSize: 12)),
+                        child: Text(
+                          "عربي",
+                          style: GoogleFonts.poppins(fontSize: 12),
+                        ),
                       ),
                     ),
                   ],
                 ),
+
               ],
             ),
           ),
@@ -329,6 +380,170 @@ class ProfileTab extends StatelessWidget {
     );
   }
 }
+class EditProfileSheet extends StatefulWidget {
+  const EditProfileSheet({super.key});
+
+  @override
+  State<EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<EditProfileSheet> {
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  String? _newPhotoBase64;
+  
+
+  @override
+  void initState() {
+    super.initState();
+    final user = context.read<AuthService>().currentUser;
+
+    if (user != null) {
+      _firstNameController.text = user.firstName;
+      _lastNameController.text = user.lastName;
+      _emailController.text = user.email;
+    }
+  }
+ Future<void> _pickImage() async {
+  final picker = ImagePicker();
+  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+  if (image == null) return;
+
+  final bytes = await image.readAsBytes();
+
+  setState(() {
+    _newPhotoBase64 = base64Encode(bytes);
+  });
+}
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<AuthService>().currentUser;
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Avatar
+          GestureDetector(
+            onTap: () async {
+              print("Avatar tapped"); // debug line
+              await _pickImage();
+            },
+
+            
+            child: Stack(
+              children: [
+                
+
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: const Color(0xFFE8F8F5),
+                  child: _newPhotoBase64 != null
+                      ? ClipOval(
+                          child: Image.memory(
+                            base64Decode(_newPhotoBase64!),
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : user?.photoBase64 != null
+                          ? ClipOval(
+                              child: Image.memory(
+                                base64Decode(user!.photoBase64!),
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.person,
+                              size: 40,
+                              color: Color(0xFF2ECC71),
+                            ),
+                ),
+
+
+
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Color(0xFF2ECC71),
+                    child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // First Name
+          TextField(
+            controller: _firstNameController,
+            decoration: const InputDecoration(labelText: 'Prénom'),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Last Name
+          TextField(
+            controller: _lastNameController,
+            decoration: const InputDecoration(labelText: 'Nom'),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Email
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(labelText: 'Email'),
+          ),
+
+          const SizedBox(height: 24),
+          
+          // Save Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                final auth = context.read<AuthService>();
+
+                // Save text fields
+                await auth.updateProfile(
+                  firstName: _firstNameController.text,
+                  lastName: _lastNameController.text,
+                  email: _emailController.text,
+                );
+
+                // 🔥 Save photo ONLY if changed
+                if (_newPhotoBase64 != null) {
+                  await auth.updateProfilePhoto(_newPhotoBase64!);
+                }
+
+                if (context.mounted) Navigator.pop(context);
+              },
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2ECC71),
+              ),
+              child: const Text('Enregistrer'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _FavoriteCard extends StatelessWidget {
   final IconData? icon;
@@ -342,6 +557,7 @@ class _FavoriteCard extends StatelessWidget {
     required this.title,
     required this.color,
   });
+   
 
   @override
   Widget build(BuildContext context) {

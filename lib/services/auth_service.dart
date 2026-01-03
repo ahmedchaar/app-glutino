@@ -133,6 +133,35 @@ class AuthService extends ChangeNotifier {
     _setLoading(false);
     return false;
   }
+   Future<void> updateProfile({
+  required String firstName,
+    required String lastName,
+    required String email,
+  }) async {
+    if (_currentUser == null) return;
+
+    _currentUser = _currentUser!.copyWith(
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      // 👇 KEEP EXISTING PHOTO
+      photoBase64: _currentUser!.photoBase64,
+    );
+
+    await _saveUserToPrefs();
+    notifyListeners();
+  }
+
+
+ Future<void> updateProfilePhoto(String base64Image) async {
+  if (_currentUser == null) return;
+
+  _currentUser = _currentUser!.copyWith(photoBase64: base64Image);
+  await _saveUserToPrefs();
+  notifyListeners();
+}
+
+
 
   Future<void> logout() async {
     try {

@@ -2,18 +2,30 @@ class User {
   final String email;
   final String firstName;
   final String lastName;
+  final String? photoBase64; // 👈 NEW
 
   User({
     required this.email,
     required this.firstName,
     required this.lastName,
+    this.photoBase64,
   });
+  
+  User copyWith({String? firstName, String? lastName, String? email, String? photoBase64}) {
+    return User(
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      email: email ?? this.email,
+      photoBase64: photoBase64 ?? this.photoBase64,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
       'email': email,
       'firstName': firstName,
       'lastName': lastName,
+      'photoBase64': photoBase64,
     };
   }
 
@@ -22,6 +34,9 @@ class User {
       email: json['email'] ?? '',
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
+       photoBase64: json['photoBase64']?? '',
     );
   }
+ 
 }
+
